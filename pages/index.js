@@ -1,20 +1,30 @@
 import React from "react";
 import { Heading, Page, TextStyle, Layout, EmptyState } from "@shopify/polaris";
+import { useAppBridge } from "@shopify/app-bridge-react";
+import { getSessionToken, authenticatedFetch } from "@shopify/app-bridge-utils";
 
-const img = "https://cdn.shopify.com/s/files/1/0757/9955/files/empty-state.svg";
+function Index() {
+  const app = useAppBridge();
+  //const aFetch = authenticatedFetch(app);
 
-class Index extends React.Component {
-  state = {
-    open: false,
-  };
-  render() {
-    return (
-      <div>
-        cta
-        <p> Select products to change their price temporarily. </p>;
-      </div>
-    );
+  async function getCheckouts() {
+    const token = await getSessionToken(app);
+
+    const response = await fetch("/api/", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((response) => JSON.stringify(response))
+      .then((data) => console.log(JSON.parse(data)));
+
+    // const checkouts = await response.json();
   }
+
+  return (
+    <Page>
+      test
+      <button onClick={getCheckouts}>API call</button>
+    </Page>
+  );
 }
 
 export default Index;

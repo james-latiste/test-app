@@ -1,8 +1,12 @@
 import "@babel/polyfill";
 import dotenv from "dotenv";
 import "isomorphic-fetch";
-import createShopifyAuth, { verifyRequest } from "@shopify/koa-shopify-auth";
-import Shopify, { ApiVersion } from "@shopify/shopify-api";
+import createShopifyAuth, {
+  verifyRequest
+} from "@shopify/koa-shopify-auth";
+import Shopify, {
+  ApiVersion
+} from "@shopify/shopify-api";
 import Koa from "koa";
 import next from "next";
 import Router from "koa-router";
@@ -44,7 +48,11 @@ app.prepare().then(async () => {
     createShopifyAuth({
       async afterAuth(ctx) {
         // Access token and shop available in ctx.state.shopify
-        const { shop, accessToken, scope } = ctx.state.shopify;
+        const {
+          shop,
+          accessToken,
+          scope
+        } = ctx.state.shopify;
         const host = ctx.query.host;
         ACTIVE_SHOPIFY_SHOPS[shop] = scope;
 
@@ -84,11 +92,31 @@ app.prepare().then(async () => {
 
   router.post(
     "/graphql",
-    verifyRequest({ returnHeader: true }),
+    verifyRequest({
+      returnHeader: true
+    }),
     async (ctx, next) => {
       await Shopify.Utils.graphqlProxy(ctx.req, ctx.res);
     }
   );
+
+  router.get("/api/:object", verifyRequest({
+    returnHeader: true
+  }), async (ctx) => {
+    // Load the current session to get the `accessToken`.
+    const session = await Shopify.Utils.loadCurrentSession(ctx.req, ctx.res);
+
+    // Create a new client for the specified shop.
+    const client = new Shopify.Clients.Rest(session.shop, session.accessToken);
+
+    // Use `client.get` to request the specified Shopify REST API endpoint, e.g. `products`.
+    const results = await client.get({
+      path: ctx.params.object,
+    });
+
+    ctx.body = results.body;
+    ctx.res.status = 200;
+  });
 
   router.get("(/_next/static/.*)", handleRequest); // Static content is clear
   router.get("/_next/webpack-hmr", handleRequest); // Webpack content is clear
